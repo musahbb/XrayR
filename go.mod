@@ -18,7 +18,7 @@ require (
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/sagernet/sing v0.7.13
 	github.com/sagernet/sing-shadowsocks v0.2.7
-	github.com/shirou/gopsutil/v3 v3.24.2
+	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.18.2
