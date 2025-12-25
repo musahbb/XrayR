@@ -14,5 +14,8 @@ updates:
       timezone: "Asia/Shanghai"
     open-pull-requests-limit: 10
     rebase-strategy: "auto"
+    labels:
+      - "dependencies"
+      - "dependabot"
     reviewers:
       - "musahbb"
