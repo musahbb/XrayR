@@ -1,6 +1,6 @@
 module github.com/wyx2685/XrayR
 
-go 1.24.0
+go 1.25
 
 require (
 	dario.cat/mergo v1.0.0
@@ -15,7 +15,7 @@ require (
 	github.com/gogf/gf/v2 v2.7.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/r3labs/diff/v2 v2.15.1
-	github.com/redis/go-redis/v9 v9.5.1
+	github.com/redis/go-redis/v9 v9.5.5
 	github.com/sagernet/sing v0.7.13
 	github.com/sagernet/sing-shadowsocks v0.2.7
 	github.com/shirou/gopsutil/v3 v3.24.2
