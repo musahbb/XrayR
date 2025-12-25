@@ -1,6 +1,6 @@
 module github.com/wyx2685/XrayR
 
-go 1.25
+go 1.24.0
 
 require (
 	dario.cat/mergo v1.0.0
@@ -26,7 +26,7 @@ require (
 	github.com/xtls/xray-core v1.8.25-0.20250101120305-e80ca67feed9
 	golang.org/x/crypto v0.31.0
 	golang.org/x/net v0.33.0
-	golang.org/x/time v0.5.0
+	golang.org/x/time v0.14.0
 	google.golang.org/protobuf v1.36.1
 )
 
