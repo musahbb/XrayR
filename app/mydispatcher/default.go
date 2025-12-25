@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	stdnet "net"
+
 	"github.com/xtls/xray-core/app/dispatcher"
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
@@ -409,15 +411,39 @@ func sniffer(ctx context.Context, cReader *cachedReader, metadataOnly bool, netw
 func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.Link, destination net.Destination) {
 	outbounds := session.OutboundsFromContext(ctx)
 	ob := outbounds[len(outbounds)-1]
-	if hosts, ok := d.dns.(dns.HostsLookup); ok && destination.Address.Family().IsDomain() {
-		proxied := hosts.LookupHosts(ob.Target.String())
-		if proxied != nil {
-			ro := ob.RouteTarget == destination
-			destination.Address = *proxied
-			if ro {
-				ob.RouteTarget = destination
-			} else {
-				ob.Target = destination
+	if destination.Address.Family().IsDomain() {
+		if hosts, ok := d.dns.(dns.HostsLookup); ok {
+			proxied := hosts.LookupHosts(ob.Target.String())
+			if proxied != nil {
+				ro := ob.RouteTarget == destination
+				destination.Address = *proxied
+				if ro {
+					ob.RouteTarget = destination
+				} else {
+					ob.Target = destination
+				}
+			}
+		} else {
+			// Fallback: resolve using the standard library
+			if ips, err := stdnet.LookupIP(ob.Target.String()); err == nil && len(ips) > 0 {
+				var chosen stdnet.IP
+				for _, ip := range ips {
+					if ip.To4() != nil {
+						chosen = ip
+						break
+					}
+				}
+				if chosen == nil {
+					chosen = ips[0]
+				}
+				addr := net.ParseAddress(chosen.String())
+				ro := ob.RouteTarget == destination
+				destination.Address = addr
+				if ro {
+					ob.RouteTarget = destination
+				} else {
+					ob.Target = destination
+				}
 			}
 		}
 	}
