@@ -12,7 +12,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-acme/lego/v4 v4.16.1
 	github.com/go-resty/resty/v2 v2.17.1
-	github.com/gogf/gf/v2 v2.7.0
+	github.com/gogf/gf/v2 v2.9.6
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/r3labs/diff/v2 v2.15.1
 	github.com/redis/go-redis/v9 v9.17.2
@@ -52,7 +52,7 @@ require (
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
-	github.com/BurntSushi/toml v1.3.2 // indirect
+	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
 	github.com/CloudyKit/jet/v6 v6.2.0 // indirect
 	github.com/Joker/jade v1.1.3 // indirect
@@ -107,7 +107,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
-	github.com/go-logr/logr v1.4.2 // indirect
+	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
@@ -259,10 +259,11 @@ require (
 	github.com/yosssi/ace v0.0.5 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opencensus.io v0.24.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
-	go.opentelemetry.io/otel v1.31.0 // indirect
-	go.opentelemetry.io/otel/metric v1.31.0 // indirect
-	go.opentelemetry.io/otel/trace v1.31.0 // indirect
+	go.opentelemetry.io/otel v1.38.0 // indirect
+	go.opentelemetry.io/otel/metric v1.38.0 // indirect
+	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/mock v0.6.0 // indirect
 	go.uber.org/ratelimit v0.3.1 // indirect
