@@ -101,7 +101,9 @@ func (r *cachedReader) Interrupt() {
 }
 
 // DefaultDispatcher is a default implementation of Dispatcher.
+// and adds XrayR-specific features like rate limiting and rule management.
 type DefaultDispatcher struct {
+	*dispatcher.DefaultDispatcher
 	ohm         outbound.Manager
 	router      routing.Router
 	policy      policy.Manager
@@ -114,11 +116,24 @@ type DefaultDispatcher struct {
 
 func init() {
 	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config interface{}) (interface{}, error) {
-		d := new(DefaultDispatcher)
+		// First create the official dispatcher
+		officialDispatcher := new(dispatcher.DefaultDispatcher)
+		d := &DefaultDispatcher{
+			DefaultDispatcher: officialDispatcher,
+		}
+		
 		if err := core.RequireFeatures(ctx, func(om outbound.Manager, router routing.Router, pm policy.Manager, sm stats.Manager, dc dns.Client) error {
 			core.OptionalFeatures(ctx, func(fdns dns.FakeDNSEngine) {
 				d.fdns = fdns
 			})
+			// Initialize the official dispatcher with an empty config
+			dispatcherConfig := &dispatcher.Config{
+				Settings: &dispatcher.SessionConfig{},
+			}
+			if err := officialDispatcher.Init(dispatcherConfig, om, router, pm, sm); err != nil {
+				return err
+			}
+			// Initialize our custom fields
 			return d.Init(config.(*Config), om, router, pm, sm, dc)
 		}); err != nil {
 			return nil, err
@@ -139,9 +154,9 @@ func (d *DefaultDispatcher) Init(config *Config, om outbound.Manager, router rou
 	return nil
 }
 
-// Type implements common.HasType.
+// Type implements common.HasType for registering as a separate feature, not overriding core dispatcher.
 func (*DefaultDispatcher) Type() interface{} {
-	return routing.DispatcherType()
+	return Type()
 }
 
 // Start implements common.Runnable.
@@ -409,45 +424,11 @@ func sniffer(ctx context.Context, cReader *cachedReader, metadataOnly bool, netw
 }
 
 func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.Link, destination net.Destination) {
-	outbounds := session.OutboundsFromContext(ctx)
-	ob := outbounds[len(outbounds)-1]
-	if destination.Address.Family().IsDomain() {
-		if hosts, ok := d.dns.(dns.HostsLookup); ok {
-			proxied := hosts.LookupHosts(ob.Target.String())
-			if proxied != nil {
-				ro := ob.RouteTarget == destination
-				destination.Address = *proxied
-				if ro {
-					ob.RouteTarget = destination
-				} else {
-					ob.Target = destination
-				}
-			}
-		} else {
-			// Fallback: resolve using the standard library
-			if ips, err := stdnet.LookupIP(ob.Target.String()); err == nil && len(ips) > 0 {
-				var chosen stdnet.IP
-				for _, ip := range ips {
-					if ip.To4() != nil {
-						chosen = ip
-						break
-					}
-				}
-				if chosen == nil {
-					chosen = ips[0]
-				}
-				addr := net.ParseAddress(chosen.String())
-				ro := ob.RouteTarget == destination
-				destination.Address = addr
-				if ro {
-					ob.RouteTarget = destination
-				} else {
-					ob.Target = destination
-				}
-			}
-		}
-	}
-
+	// Note: dns.HostsLookup interface has been removed in Xray-core v25.10.15
+	// The hosts lookup functionality is now handled internally by the DNS client
+	// Previous code for hosts lookup has been removed to maintain compatibility
+	// with the new Xray-core version
+	
 	var handler outbound.Handler
 
 	// Check if domain and protocol hit the rule
