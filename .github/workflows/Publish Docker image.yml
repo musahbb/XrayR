@@ -1,9 +1,10 @@
 name: Publish Docker image
+
 on:
   workflow_dispatch:
   release:
-    types:
-      - published
+    types: [published]
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/xrayr
@@ -14,28 +15,32 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
+        platform: [linux/amd64, linux/arm64]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Login to GitHub Container Registry
+
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push by digest
+
+      - name: Build and push (platform)
         id: build
         uses: docker/build-push-action@v6
         with:
@@ -43,50 +48,59 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
-      - name: Export digest
+
+      - name: Save digest
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"          
+          echo "${digest#sha256:}" > "/tmp/digests/${{ matrix.platform }}"
+
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests
+          name: digests-${{ matrix.platform }}
           path: /tmp/digests/*
-          if-no-files-found: error
           retention-days: 1
+
 
   merge:
     runs-on: ubuntu-latest
-    needs:
-      - build
+    needs: build
     steps:
-      - name: Download digests
+      - name: Download all digests
         uses: actions/download-artifact@v4
         with:
-          name: digests
           path: /tmp/digests
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      - name: Login to GitHub Container Registry
+
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Create manifest list and push
+
+      - name: Create and push manifest list
         working-directory: /tmp/digests
         run: |
+          echo "Found digest files:"
           ls -al
-          echo docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *) 
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
-      - name: Inspect image
+
+          TAG_ARGS=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+
+          DIGEST_ARGS=$(for f in *; do echo -n "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:$f "; done)
+
+          echo docker buildx imagetools create $TAG_ARGS $DIGEST_ARGS
+          docker buildx imagetools create $TAG_ARGS $DIGEST_ARGS
+
+      - name: Inspect final image
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
